@@ -53,7 +53,7 @@ export function SourceCitations({ searchResults, files, fileSources }: SourceCit
             rel="noopener noreferrer"
             className="
               flex-shrink-0 w-56 p-3
-              bg-surface-light border border-border rounded-lg
+              glass rounded-lg
               hover:border-primary/50 transition-colors
               group/card cursor-pointer no-underline
             "
@@ -90,7 +90,7 @@ export function SourceCitations({ searchResults, files, fileSources }: SourceCit
             key={`file-source-${index}`}
             className="
               flex-shrink-0 w-44 p-3
-              bg-surface-light border border-border rounded-lg
+              glass rounded-lg
               flex items-center gap-2
             "
           >
@@ -105,7 +105,7 @@ export function SourceCitations({ searchResults, files, fileSources }: SourceCit
             key={`file-${index}`}
             className="
               flex-shrink-0 w-44 p-3
-              bg-surface-light border border-border rounded-lg
+              glass rounded-lg
               flex items-center gap-2
             "
           >

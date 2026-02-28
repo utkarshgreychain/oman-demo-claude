@@ -1,19 +1,22 @@
 import { useState, useRef, useCallback, type KeyboardEvent, type ChangeEvent } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, Paperclip, Square, Globe, ChevronDown, Check } from 'lucide-react';
+import { Send, Paperclip, Square, Globe, ChevronDown, Check, Search } from 'lucide-react';
 import { useSSEChat } from '../../hooks/useSSEChat';
 import { useFileUpload } from '../../hooks/useFileUpload';
 import { useConfigStore } from '../../stores/configStore';
 import { useUIStore } from '../../stores/uiStore';
 import { FileUploadPreview } from './FileUploadPreview';
 import { Spinner } from '../shared/Spinner';
+import { getModelTier, getTierLabel, getTierColor } from '../../utils/modelTiers';
 
 export function ChatInput() {
   const [inputValue, setInputValue] = useState('');
   const [modelDropdownOpen, setModelDropdownOpen] = useState(false);
+  const [modelSearch, setModelSearch] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const modelDropdownRef = useRef<HTMLDivElement>(null);
+  const modelSearchRef = useRef<HTMLInputElement>(null);
 
   const { isStreaming, sendMessage, stopStreaming } = useSSEChat();
   const { uploadedFiles, uploading, uploadFile, removeFile, clearFiles } = useFileUpload();
@@ -99,7 +102,7 @@ export function ChatInput() {
   const canSend = inputValue.trim().length > 0 && !isStreaming && !uploading;
 
   return (
-    <div className="border-t border-border bg-surface/80 backdrop-blur-sm">
+    <div className="border-t border-glass-border glass">
       {/* File previews */}
       <FileUploadPreview files={uploadedFiles} onRemove={removeFile} />
 
@@ -243,50 +246,96 @@ export function ChatInput() {
                 transition={{ type: 'spring', stiffness: 500, damping: 35 }}
                 className="
                   absolute bottom-full mb-2 left-0
-                  min-w-[260px] max-h-64 overflow-auto
-                  bg-surface border border-border rounded-lg shadow-xl
-                  py-1 z-50 origin-bottom
+                  min-w-[300px] max-h-80 overflow-hidden flex flex-col
+                  glass-strong rounded-lg
+                  z-50 origin-bottom
                 "
               >
-                {llmProviders
-                  .filter((p) => p.is_active && p.connection_status === 'connected')
-                  .map((provider) => (
-                    <div key={provider.id}>
-                      <div className="px-3 py-1.5 text-xs font-semibold text-text-secondary uppercase tracking-wider">
-                        {provider.display_name}
-                      </div>
-                      {provider.models.map((model) => {
-                        const isSelected =
-                          selectedProvider === provider.name && selectedModel === model;
-                        return (
-                          <button
-                            key={`${provider.name}-${model}`}
-                            type="button"
-                            onClick={() => handleSelectModel(provider.name, model)}
-                            className={`
-                              w-full flex items-center justify-between
-                              px-3 py-2 text-sm cursor-pointer transition-colors
-                              ${
-                                isSelected
-                                  ? 'bg-primary/10 text-primary'
-                                  : 'text-text-primary hover:bg-surface-light'
-                              }
-                            `}
-                          >
-                            <span className="truncate">{model}</span>
-                            {isSelected && <Check size={14} className="shrink-0 ml-2 text-primary" />}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  ))}
-
-                {llmProviders.filter((p) => p.is_active && p.connection_status === 'connected')
-                  .length === 0 && (
-                  <div className="px-3 py-4 text-sm text-text-secondary text-center">
-                    No providers configured
+                {/* Search input */}
+                <div className="p-2 border-b border-glass-border">
+                  <div className="relative">
+                    <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-text-secondary" />
+                    <input
+                      ref={modelSearchRef}
+                      type="text"
+                      value={modelSearch}
+                      onChange={(e) => setModelSearch(e.target.value)}
+                      placeholder="Search models..."
+                      className="w-full pl-8 pr-3 py-1.5 text-xs bg-surface-light border border-glass-border rounded-md text-text-primary placeholder-text-secondary focus:outline-none focus:ring-1 focus:ring-primary/50"
+                      autoFocus
+                    />
                   </div>
-                )}
+                </div>
+
+                {/* Model list */}
+                <div className="overflow-auto py-1">
+                  {llmProviders
+                    .filter((p) => p.is_active && p.connection_status === 'connected')
+                    .map((provider) => {
+                      const filteredModels = provider.models.filter((m) =>
+                        m.toLowerCase().includes(modelSearch.toLowerCase()) ||
+                        provider.display_name.toLowerCase().includes(modelSearch.toLowerCase())
+                      );
+                      if (filteredModels.length === 0) return null;
+                      return (
+                        <div key={provider.id}>
+                          <div className="px-3 py-1.5 text-xs font-semibold text-text-secondary uppercase tracking-wider">
+                            {provider.display_name}
+                          </div>
+                          {filteredModels.map((model) => {
+                            const isSelected =
+                              selectedProvider === provider.name && selectedModel === model;
+                            const tier = getModelTier(model);
+                            const tierLabel = getTierLabel(tier);
+                            const tierColor = getTierColor(tier);
+                            return (
+                              <button
+                                key={`${provider.name}-${model}`}
+                                type="button"
+                                onClick={() => {
+                                  handleSelectModel(provider.name, model);
+                                  setModelSearch('');
+                                }}
+                                className={`
+                                  w-full flex items-center justify-between gap-2
+                                  px-3 py-2 text-sm cursor-pointer transition-colors
+                                  ${
+                                    isSelected
+                                      ? 'bg-primary/10 text-primary'
+                                      : 'text-text-primary hover:bg-surface-light'
+                                  }
+                                `}
+                              >
+                                <span className="truncate">{model}</span>
+                                <div className="flex items-center gap-1.5 shrink-0">
+                                  <span className={`text-[10px] px-1.5 py-0.5 rounded-full border font-medium ${tierColor}`}>
+                                    {tierLabel}
+                                  </span>
+                                  {isSelected && <Check size={14} className="text-primary" />}
+                                </div>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      );
+                    })}
+
+                  {llmProviders.filter((p) => p.is_active && p.connection_status === 'connected')
+                    .length === 0 && (
+                    <div className="px-3 py-4 text-sm text-text-secondary text-center">
+                      No providers configured
+                    </div>
+                  )}
+
+                  {llmProviders
+                    .filter((p) => p.is_active && p.connection_status === 'connected')
+                    .every((p) => p.models.every((m) => !m.toLowerCase().includes(modelSearch.toLowerCase()) && !p.display_name.toLowerCase().includes(modelSearch.toLowerCase()))) &&
+                    modelSearch && (
+                    <div className="px-3 py-4 text-sm text-text-secondary text-center">
+                      No models match "{modelSearch}"
+                    </div>
+                  )}
+                </div>
               </motion.div>
             )}
           </AnimatePresence>

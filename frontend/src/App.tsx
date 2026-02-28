@@ -6,6 +6,8 @@ import { AppLayout } from './components/layout/AppLayout';
 import { ChatPage } from './pages/ChatPage';
 import { ConfigPage } from './pages/ConfigPage';
 import { LoginPage } from './pages/LoginPage';
+import { DashboardPage } from './pages/DashboardPage';
+import { SourcesPage } from './pages/SourcesPage';
 
 function App() {
   return (
@@ -21,7 +23,9 @@ function App() {
                 </ProtectedRoute>
               }
             >
-              <Route path="/" element={<ChatPage />} />
+              <Route path="/" element={<DashboardPage />} />
+              <Route path="/home" element={<ChatPage />} />
+              <Route path="/sources" element={<SourcesPage />} />
               <Route path="/config" element={<ConfigPage />} />
             </Route>
           </Routes>

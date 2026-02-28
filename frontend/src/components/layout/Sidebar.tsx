@@ -30,7 +30,7 @@ export function Sidebar() {
             exit={{ opacity: 0, x: -10 }}
             transition={{ duration: 0.2 }}
             onClick={toggleSidebar}
-            className="fixed top-3 left-3 z-30 p-2 rounded-lg bg-surface border border-border text-text-secondary hover:text-text-primary hover:bg-surface-light transition-colors cursor-pointer"
+            className="fixed top-3 left-3 z-30 p-2 rounded-lg glass text-text-secondary hover:text-text-primary transition-colors cursor-pointer"
             aria-label="Open sidebar"
           >
             <PanelLeft size={18} />
@@ -47,10 +47,10 @@ export function Sidebar() {
             initial="closed"
             animate="open"
             exit="closed"
-            className="h-full bg-surface border-r border-border flex flex-col overflow-hidden shrink-0"
+            className="h-full glass border-r border-glass-border flex flex-col overflow-hidden shrink-0"
           >
             {/* Sidebar header with close toggle */}
-            <div className="flex items-center justify-between h-14 px-4 border-b border-border shrink-0">
+            <div className="flex items-center justify-between h-14 px-4 border-b border-glass-border shrink-0">
               <span className="text-sm font-semibold text-text-primary">Conversations</span>
               <button
                 onClick={toggleSidebar}

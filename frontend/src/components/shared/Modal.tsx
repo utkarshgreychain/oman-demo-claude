@@ -74,7 +74,7 @@ export function Modal({
           <motion.div
             className={`
               relative w-full ${sizeClasses[size]}
-              bg-surface rounded-xl shadow-2xl border border-border
+              glass-strong rounded-xl
             `}
             variants={modalVariants}
             initial="hidden"

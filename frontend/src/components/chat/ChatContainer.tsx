@@ -117,7 +117,7 @@ function EmptyState() {
       >
         {/* Logo / icon area */}
         <div className="relative mb-6">
-          <div className="w-16 h-16 rounded-2xl bg-primary/20 flex items-center justify-center">
+          <div className="w-16 h-16 rounded-2xl bg-primary/20 glass flex items-center justify-center">
             <MessageSquare size={32} className="text-primary" />
           </div>
           <motion.div
@@ -150,7 +150,7 @@ function EmptyState() {
               whileHover={{ scale: 1.05 }}
               className="
                 px-3 py-1.5 text-xs rounded-full
-                bg-surface-light border border-border
+                glass
                 text-text-secondary hover:text-text-primary
                 hover:border-primary/50 transition-colors cursor-default
               "

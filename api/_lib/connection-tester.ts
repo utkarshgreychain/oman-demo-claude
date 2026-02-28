@@ -110,6 +110,118 @@ async function testBrave(apiKey: string): Promise<TestResult> {
   return { success: true };
 }
 
+async function testMeta(apiKey: string, baseUrl?: string | null): Promise<TestResult> {
+  const url = `${baseUrl || 'https://api.together.xyz'}/v1/models`;
+  const resp = await fetchWithTimeout(url, {
+    headers: { Authorization: `Bearer ${apiKey}` },
+  });
+  if (!resp.ok) throw new Error(`HTTP ${resp.status}: ${await resp.text()}`);
+  const data = await resp.json();
+  const modelIds = (data.data || [])
+    .map((m: any) => m.id)
+    .filter((id: string) => /llama|meta/i.test(id))
+    .sort();
+  return { success: true, models: modelIds.length > 0 ? modelIds : (data.data || []).map((m: any) => m.id).sort() };
+}
+
+async function testMistral(apiKey: string): Promise<TestResult> {
+  const resp = await fetchWithTimeout('https://api.mistral.ai/v1/models', {
+    headers: { Authorization: `Bearer ${apiKey}` },
+  });
+  if (!resp.ok) throw new Error(`HTTP ${resp.status}: ${await resp.text()}`);
+  const data = await resp.json();
+  const modelIds = (data.data || []).map((m: any) => m.id).sort();
+  return { success: true, models: modelIds };
+}
+
+async function testDeepSeek(apiKey: string): Promise<TestResult> {
+  const resp = await fetchWithTimeout('https://api.deepseek.com/v1/models', {
+    headers: { Authorization: `Bearer ${apiKey}` },
+  });
+  if (!resp.ok) throw new Error(`HTTP ${resp.status}: ${await resp.text()}`);
+  const data = await resp.json();
+  const modelIds = (data.data || []).map((m: any) => m.id).sort();
+  return { success: true, models: modelIds };
+}
+
+async function testAzureOpenAI(apiKey: string, baseUrl?: string | null): Promise<TestResult> {
+  if (!baseUrl) throw new Error('Azure OpenAI requires a base URL (Resource URL)');
+  const url = `${baseUrl.replace(/\/$/, '')}/openai/models?api-version=2024-10-21`;
+  const resp = await fetchWithTimeout(url, {
+    headers: { 'api-key': apiKey },
+  });
+  if (!resp.ok) throw new Error(`HTTP ${resp.status}: ${await resp.text()}`);
+  const data = await resp.json();
+  const modelIds = (data.data || []).map((m: any) => m.id).sort();
+  return { success: true, models: modelIds };
+}
+
+async function testBedrock(apiKey: string): Promise<TestResult> {
+  let credentials: { accessKeyId: string; secretAccessKey: string; region: string };
+  try {
+    credentials = JSON.parse(apiKey);
+  } catch {
+    throw new Error('Bedrock credentials must be JSON: {"accessKeyId":"...","secretAccessKey":"...","region":"us-east-1"}');
+  }
+  const { BedrockClient, ListFoundationModelsCommand } = await import('@aws-sdk/client-bedrock');
+  const client = new BedrockClient({
+    region: credentials.region || 'us-east-1',
+    credentials: {
+      accessKeyId: credentials.accessKeyId,
+      secretAccessKey: credentials.secretAccessKey,
+    },
+  });
+  const response = await client.send(new ListFoundationModelsCommand({}));
+  const modelIds = (response.modelSummaries || [])
+    .filter((m: any) => m.modelLifecycle?.status === 'ACTIVE')
+    .map((m: any) => m.modelId)
+    .sort();
+  return { success: true, models: modelIds };
+}
+
+async function testBing(apiKey: string): Promise<TestResult> {
+  const resp = await fetchWithTimeout(
+    'https://api.bing.microsoft.com/v7.0/search?q=test&count=1',
+    { headers: { 'Ocp-Apim-Subscription-Key': apiKey } }
+  );
+  if (!resp.ok) throw new Error(`HTTP ${resp.status}: ${await resp.text()}`);
+  return { success: true };
+}
+
+async function testExa(apiKey: string): Promise<TestResult> {
+  const resp = await fetchWithTimeout('https://api.exa.ai/search', {
+    method: 'POST',
+    headers: { 'x-api-key': apiKey, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ query: 'test', numResults: 1 }),
+  });
+  if (!resp.ok) throw new Error(`HTTP ${resp.status}: ${await resp.text()}`);
+  return { success: true };
+}
+
+async function testYou(apiKey: string): Promise<TestResult> {
+  const resp = await fetchWithTimeout(
+    'https://api.ydc-index.io/search?query=test&num_web_results=1',
+    { headers: { 'X-API-Key': apiKey } }
+  );
+  if (!resp.ok) throw new Error(`HTTP ${resp.status}: ${await resp.text()}`);
+  return { success: true };
+}
+
+async function testSearxng(apiKey: string): Promise<TestResult> {
+  const instanceUrl = apiKey.replace(/\/$/, '');
+  const resp = await fetchWithTimeout(`${instanceUrl}/search?q=test&format=json`);
+  if (!resp.ok) throw new Error(`HTTP ${resp.status}: ${await resp.text()}`);
+  return { success: true };
+}
+
+async function testDuckDuckGo(): Promise<TestResult> {
+  const resp = await fetchWithTimeout(
+    'https://api.duckduckgo.com/?q=test&format=json&no_redirect=1'
+  );
+  if (!resp.ok) throw new Error(`HTTP ${resp.status}: ${await resp.text()}`);
+  return { success: true };
+}
+
 type TesterFn = (apiKey: string, baseUrlOrModel?: string | null) => Promise<TestResult>;
 
 const LLM_TESTERS: Record<string, TesterFn> = {
@@ -118,12 +230,22 @@ const LLM_TESTERS: Record<string, TesterFn> = {
   google: (apiKey, model) => testGoogle(apiKey, model),
   gemini: (apiKey, model) => testGoogle(apiKey, model),
   groq: (apiKey) => testGroq(apiKey),
+  meta: (apiKey, baseUrl) => testMeta(apiKey, baseUrl),
+  mistral: (apiKey) => testMistral(apiKey),
+  deepseek: (apiKey) => testDeepSeek(apiKey),
+  'azure-openai': (apiKey, baseUrl) => testAzureOpenAI(apiKey, baseUrl),
+  bedrock: (apiKey) => testBedrock(apiKey),
 };
 
 const SEARCH_TESTERS: Record<string, TesterFn> = {
   tavily: (apiKey) => testTavily(apiKey),
   serper: (apiKey) => testSerper(apiKey),
   brave: (apiKey) => testBrave(apiKey),
+  bing: (apiKey) => testBing(apiKey),
+  exa: (apiKey) => testExa(apiKey),
+  you: (apiKey) => testYou(apiKey),
+  searxng: (apiKey) => testSearxng(apiKey),
+  duckduckgo: () => testDuckDuckGo(),
 };
 
 export async function testLLMConnection(

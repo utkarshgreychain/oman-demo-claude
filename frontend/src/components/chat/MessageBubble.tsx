@@ -50,7 +50,7 @@ export function MessageBubble({ message }: MessageBubbleProps) {
             ${
               isUser
                 ? 'bg-primary text-white rounded-2xl rounded-tr-md'
-                : 'bg-surface border border-border text-text-primary rounded-2xl rounded-tl-md prose prose-sm max-w-none prose-p:my-1.5 prose-pre:my-2 prose-ul:my-1.5 prose-ol:my-1.5 prose-headings:text-text-primary prose-a:text-primary prose-code:text-primary prose-code:bg-surface-light prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-xs prose-strong:text-text-primary'
+                : 'glass text-text-primary rounded-2xl rounded-tl-md prose prose-sm max-w-none prose-p:my-1.5 prose-pre:my-2 prose-ul:my-1.5 prose-ol:my-1.5 prose-headings:text-text-primary prose-a:text-primary prose-code:text-primary prose-code:bg-surface-light prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-xs prose-strong:text-text-primary'
             }
           `}
         >

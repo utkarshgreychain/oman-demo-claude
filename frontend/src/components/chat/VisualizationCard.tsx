@@ -37,29 +37,46 @@ function transformPieData(viz: Visualization) {
 }
 
 const tooltipStyle = {
-  backgroundColor: '#1a1a2e',
-  border: '1px solid #334155',
+  backgroundColor: 'rgba(15, 10, 30, 0.9)',
+  border: '1px solid rgba(255, 255, 255, 0.1)',
   borderRadius: '8px',
   color: '#e2e8f0',
+  backdropFilter: 'blur(12px)',
 };
 
 export function VisualizationCard({ visualization }: VisualizationCardProps) {
   const chartRef = useRef<HTMLDivElement>(null);
 
-  const handleDownload = useCallback(() => {
+  const handleDownload = useCallback(async () => {
     if (!chartRef.current) return;
-    const svg = chartRef.current.querySelector('svg');
-    if (!svg) return;
-    const svgData = new XMLSerializer().serializeToString(svg);
-    const blob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${visualization.title || 'chart'}.svg`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    try {
+      const html2canvas = (await import('html2canvas')).default;
+      const canvas = await html2canvas(chartRef.current, {
+        backgroundColor: '#0f0a1e',
+        scale: 2,
+      });
+      const url = canvas.toDataURL('image/png');
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${visualization.title || 'chart'}.png`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    } catch {
+      // Fallback to SVG download
+      const svg = chartRef.current.querySelector('svg');
+      if (!svg) return;
+      const svgData = new XMLSerializer().serializeToString(svg);
+      const blob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${visualization.title || 'chart'}.svg`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
   }, [visualization.title]);
 
   if (!visualization.data) {
@@ -223,9 +240,9 @@ export function VisualizationCard({ visualization }: VisualizationCardProps) {
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
-      className="mt-3 rounded-xl border border-border bg-surface overflow-hidden max-w-lg"
+      className="mt-3 rounded-xl glass overflow-hidden max-w-lg"
     >
-      <div className="flex items-center justify-between px-4 py-2.5 border-b border-border">
+      <div className="flex items-center justify-between px-4 py-2.5 border-b border-glass-border">
         <div className="flex items-center gap-2">
           <BarChart3 size={16} className="text-primary" />
           <span className="text-sm font-medium text-text-primary truncate">
@@ -241,7 +258,7 @@ export function VisualizationCard({ visualization }: VisualizationCardProps) {
           <Download size={16} />
         </button>
       </div>
-      <div ref={chartRef} className="p-4 bg-[#1a1a2e]">
+      <div ref={chartRef} className="p-4 bg-background/50">
         {renderChart()}
       </div>
     </motion.div>

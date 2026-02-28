@@ -74,7 +74,7 @@ function ToastItem({
       transition={{ type: 'spring', stiffness: 400, damping: 30 }}
       className={`
         flex items-start gap-3 min-w-[320px] max-w-[420px] px-4 py-3
-        rounded-lg border shadow-lg backdrop-blur-sm
+        rounded-lg border shadow-lg backdrop-blur-md
         ${config.bgClass} ${config.borderClass}
       `}
     >

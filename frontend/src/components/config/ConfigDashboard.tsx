@@ -1,6 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Plus } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useConfig } from '../../hooks/useConfig';
 import { configService } from '../../services/configService';
@@ -25,7 +24,6 @@ const itemVariants = {
 };
 
 export function ConfigDashboard() {
-  const navigate = useNavigate();
   const { llmProviders, searchProviders, refreshProviders } = useConfig();
   const [modalOpen, setModalOpen] = useState(false);
   const [modalType, setModalType] = useState<'llm' | 'search'>('llm');
@@ -91,15 +89,6 @@ export function ConfigDashboard() {
   return (
     <div className="h-full overflow-y-auto">
       <div className="max-w-5xl mx-auto px-6 py-8">
-        {/* Back button */}
-        <button
-          onClick={() => navigate('/')}
-          className="inline-flex items-center gap-2 text-text-secondary hover:text-text-primary transition-colors mb-6 cursor-pointer"
-        >
-          <ArrowLeft size={18} />
-          <span className="text-sm font-medium">Back to Chat</span>
-        </button>
-
         <h1 className="text-2xl font-bold text-text-primary mb-8">Settings</h1>
 
         {/* LLM Providers Section */}

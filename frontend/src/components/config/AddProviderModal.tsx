@@ -21,6 +21,11 @@ const LLM_PROVIDERS = [
   { value: 'anthropic', label: 'Anthropic' },
   { value: 'google', label: 'Google' },
   { value: 'groq', label: 'Groq' },
+  { value: 'meta', label: 'Meta (Llama)' },
+  { value: 'mistral', label: 'Mistral' },
+  { value: 'deepseek', label: 'DeepSeek' },
+  { value: 'azure-openai', label: 'Azure OpenAI' },
+  { value: 'bedrock', label: 'AWS Bedrock' },
   { value: 'ollama', label: 'Ollama' },
 ];
 
@@ -28,6 +33,11 @@ const SEARCH_PROVIDERS = [
   { value: 'tavily', label: 'Tavily' },
   { value: 'serper', label: 'Serper' },
   { value: 'brave', label: 'Brave' },
+  { value: 'bing', label: 'Bing' },
+  { value: 'exa', label: 'Exa' },
+  { value: 'you', label: 'You.com' },
+  { value: 'searxng', label: 'SearXNG' },
+  { value: 'duckduckgo', label: 'DuckDuckGo' },
 ];
 
 const DEFAULT_DISPLAY_NAMES: Record<string, string> = {
@@ -35,13 +45,34 @@ const DEFAULT_DISPLAY_NAMES: Record<string, string> = {
   anthropic: 'Anthropic',
   google: 'Google AI',
   groq: 'Groq',
+  meta: 'Meta Llama',
+  mistral: 'Mistral AI',
+  deepseek: 'DeepSeek',
+  'azure-openai': 'Azure OpenAI',
+  bedrock: 'AWS Bedrock',
   ollama: 'Ollama (Local)',
   tavily: 'Tavily Search',
   serper: 'Serper Search',
   brave: 'Brave Search',
+  bing: 'Bing Search',
+  exa: 'Exa Search',
+  you: 'You.com Search',
+  searxng: 'SearXNG',
+  duckduckgo: 'DuckDuckGo',
 };
 
-const SHOW_BASE_URL = new Set(['ollama']);
+const SHOW_BASE_URL = new Set(['ollama', 'meta', 'azure-openai']);
+
+// Providers that don't need an API key
+const NO_API_KEY = new Set(['duckduckgo']);
+
+// Custom labels for fields per provider
+const FIELD_LABELS: Record<string, { apiKey?: string; baseUrl?: string; baseUrlPlaceholder?: string }> = {
+  'azure-openai': { baseUrl: 'Resource URL', baseUrlPlaceholder: 'https://your-resource.openai.azure.com' },
+  meta: { baseUrl: 'Base URL', baseUrlPlaceholder: 'https://api.together.xyz (default)' },
+  searxng: { apiKey: 'Instance URL' },
+  bedrock: { apiKey: 'Credentials JSON' },
+};
 
 export function AddProviderModal({ isOpen, onClose, type, onSuccess, existingNames = [] }: AddProviderModalProps) {
   const [providerName, setProviderName] = useState('');
@@ -86,9 +117,10 @@ export function AddProviderModal({ isOpen, onClose, type, onSuccess, existingNam
   }, [providerName, apiKey, baseUrl]);
 
   const handleTestConnection = async (): Promise<TestConnectionResponse> => {
+    const effectiveApiKey = hideApiKey ? 'none' : apiKey;
     const request = {
       name: providerName,
-      api_key: apiKey,
+      api_key: effectiveApiKey,
       ...(baseUrl && { base_url: baseUrl }),
     };
 
@@ -114,11 +146,12 @@ export function AddProviderModal({ isOpen, onClose, type, onSuccess, existingNam
     setSaving(true);
     setSaveError(null);
     try {
+      const effectiveApiKey = hideApiKey ? 'none' : apiKey;
       if (type === 'llm') {
         await configService.createLLMProvider({
           name: providerName,
           display_name: displayName,
-          api_key: apiKey,
+          api_key: effectiveApiKey,
           ...(baseUrl && { base_url: baseUrl }),
           ...(selectedModel && { models: [selectedModel] }),
         });
@@ -126,7 +159,7 @@ export function AddProviderModal({ isOpen, onClose, type, onSuccess, existingNam
         await configService.createSearchProvider({
           name: providerName,
           display_name: displayName,
-          api_key: apiKey,
+          api_key: effectiveApiKey,
         });
       }
       onSuccess();
@@ -150,7 +183,9 @@ export function AddProviderModal({ isOpen, onClose, type, onSuccess, existingNam
   const allProviderOptions = type === 'llm' ? LLM_PROVIDERS : SEARCH_PROVIDERS;
   const providerOptions = allProviderOptions.filter(p => !existingNames.includes(p.value));
   const showBaseUrl = type === 'llm' && SHOW_BASE_URL.has(providerName);
-  const canTest = providerName && (type === 'search' ? apiKey : apiKey || providerName === 'ollama');
+  const hideApiKey = NO_API_KEY.has(providerName);
+  const fieldLabels = FIELD_LABELS[providerName] || {};
+  const canTest = providerName && (hideApiKey || apiKey || providerName === 'ollama');
   const canSave = testPassed && displayName;
 
   return (
@@ -185,40 +220,48 @@ export function AddProviderModal({ isOpen, onClose, type, onSuccess, existingNam
         </div>
 
         {/* API Key */}
-        <div>
-          <label className="block text-sm font-medium text-text-secondary mb-1.5">
-            API Key
-          </label>
-          <div className="relative">
-            <input
-              type={showApiKey ? 'text' : 'password'}
-              value={apiKey}
-              onChange={(e) => setApiKey(e.target.value)}
-              placeholder="Enter your API key"
-              className="w-full px-3 py-2 pr-10 rounded-lg text-sm bg-surface-light border border-border text-text-primary placeholder-text-secondary focus:outline-none focus:ring-2 focus:ring-primary/50 transition-colors"
-            />
-            <button
-              type="button"
-              onClick={() => setShowApiKey(!showApiKey)}
-              className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded text-text-secondary hover:text-text-primary transition-colors cursor-pointer"
-              aria-label={showApiKey ? 'Hide API key' : 'Show API key'}
-            >
-              {showApiKey ? <EyeOff size={16} /> : <Eye size={16} />}
-            </button>
+        {!hideApiKey && (
+          <div>
+            <label className="block text-sm font-medium text-text-secondary mb-1.5">
+              {fieldLabels.apiKey || 'API Key'}
+            </label>
+            <div className="relative">
+              <input
+                type={showApiKey ? 'text' : 'password'}
+                value={apiKey}
+                onChange={(e) => setApiKey(e.target.value)}
+                placeholder={
+                  providerName === 'bedrock'
+                    ? '{"accessKeyId":"...","secretAccessKey":"...","region":"us-east-1"}'
+                    : providerName === 'searxng'
+                    ? 'https://your-searxng-instance.com'
+                    : 'Enter your API key'
+                }
+                className="w-full px-3 py-2 pr-10 rounded-lg text-sm bg-surface-light border border-border text-text-primary placeholder-text-secondary focus:outline-none focus:ring-2 focus:ring-primary/50 transition-colors"
+              />
+              <button
+                type="button"
+                onClick={() => setShowApiKey(!showApiKey)}
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded text-text-secondary hover:text-text-primary transition-colors cursor-pointer"
+                aria-label={showApiKey ? 'Hide API key' : 'Show API key'}
+              >
+                {showApiKey ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Base URL (conditional) */}
         {showBaseUrl && (
           <div>
             <label className="block text-sm font-medium text-text-secondary mb-1.5">
-              Base URL <span className="text-text-secondary/60">(optional)</span>
+              {fieldLabels.baseUrl || 'Base URL'} <span className="text-text-secondary/60">(optional)</span>
             </label>
             <input
               type="text"
               value={baseUrl}
               onChange={(e) => setBaseUrl(e.target.value)}
-              placeholder="e.g. http://localhost:11434"
+              placeholder={fieldLabels.baseUrlPlaceholder || 'e.g. http://localhost:11434'}
               className="w-full px-3 py-2 rounded-lg text-sm bg-surface-light border border-border text-text-primary placeholder-text-secondary focus:outline-none focus:ring-2 focus:ring-primary/50 transition-colors"
             />
           </div>

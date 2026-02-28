@@ -35,7 +35,7 @@ export function StreamingMessage({ content, status: _status, progressSteps }: St
         {/* Streaming content */}
         <div className="
           px-4 py-3 rounded-2xl rounded-tl-md
-          bg-surface border border-border
+          glass
           text-text-primary text-sm
           prose prose-sm max-w-none
           prose-p:my-1.5 prose-pre:my-2 prose-ul:my-1.5 prose-ol:my-1.5

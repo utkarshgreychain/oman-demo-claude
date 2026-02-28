@@ -18,9 +18,9 @@ export function ConversationSidebar() {
   );
 
   return (
-    <div className="flex flex-col h-full bg-surface border-r border-border">
+    <div className="flex flex-col h-full">
       {/* Header with new chat button */}
-      <div className="p-4 border-b border-border">
+      <div className="p-4 border-b border-glass-border">
         <motion.button
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}

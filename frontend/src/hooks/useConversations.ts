@@ -27,9 +27,9 @@ export function useConversations() {
       const conv = await chatService.getConversation(id);
       setActiveConversation(id);
       setMessages(conv.messages || []);
-      // Navigate to chat page if on config page
-      if (location.pathname !== '/') {
-        navigate('/');
+      // Navigate to chat page if not already there
+      if (location.pathname !== '/home') {
+        navigate('/home');
       }
     } catch (err) {
       console.error('Failed to load conversation:', err);
@@ -52,9 +52,9 @@ export function useConversations() {
   const newConversation = useCallback(() => {
     setActiveConversation(null);
     setMessages([]);
-    // Navigate to chat page if on config page
-    if (location.pathname !== '/') {
-      navigate('/');
+    // Navigate to chat page if not already there
+    if (location.pathname !== '/home') {
+      navigate('/home');
     }
   }, [location.pathname, navigate]);
 

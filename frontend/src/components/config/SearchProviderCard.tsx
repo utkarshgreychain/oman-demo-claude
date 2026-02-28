@@ -24,7 +24,7 @@ export function SearchProviderCard({
     <motion.div
       whileHover={{ y: -2 }}
       transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-      className="relative bg-surface border border-border rounded-xl p-5 hover:border-primary/40 transition-colors"
+      className="relative glass rounded-xl p-5 hover:border-primary/40 transition-colors"
     >
       {/* Default badge */}
       {provider.is_default && (
