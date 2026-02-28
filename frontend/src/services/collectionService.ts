@@ -53,11 +53,11 @@ export const collectionService = {
   },
 
   addFileToCollection: async (collectionId: string, fileId: string): Promise<void> => {
-    await api.post(`/collections/${collectionId}/files`, { file_id: fileId });
+    await api.post(`/collections/${collectionId}`, { file_id: fileId });
   },
 
   removeFileFromCollection: async (collectionId: string, fileId: string): Promise<void> => {
-    await api.delete(`/collections/${collectionId}/files`, { data: { file_id: fileId } });
+    await api.delete(`/collections/${collectionId}`, { data: { file_id: fileId } });
   },
 
   // Files
@@ -67,9 +67,9 @@ export const collectionService = {
     return data;
   },
 
-  // Dashboard stats
+  // Dashboard stats (served via /collections?stats=true)
   getStats: async (): Promise<DashboardStats> => {
-    const { data } = await api.get('/dashboard/stats');
+    const { data } = await api.get('/collections?stats=true');
     return data;
   },
 };

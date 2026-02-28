@@ -9,7 +9,7 @@ export default defineConfig({
   reporter: 'html',
   timeout: 60000,
   use: {
-    baseURL: 'http://localhost:3001',
+    baseURL: process.env.TEST_BASE_URL || 'https://oman-demo-claude.vercel.app',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
   },

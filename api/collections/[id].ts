@@ -48,7 +48,46 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.json(data);
   }
 
+  if (req.method === 'POST') {
+    // Add file to collection
+    const { data: collection } = await supabase
+      .from('file_collections')
+      .select('id')
+      .eq('id', id)
+      .eq('user_id', user.id)
+      .single();
+
+    if (!collection) return res.status(404).json({ error: 'Collection not found' });
+
+    const { file_id } = req.body;
+    if (!file_id) return res.status(400).json({ error: 'file_id is required' });
+
+    const { data, error } = await supabase
+      .from('file_collection_items')
+      .insert({ collection_id: id, file_id })
+      .select()
+      .single();
+
+    if (error) return res.status(400).json({ error: error.message });
+    return res.status(201).json(data);
+  }
+
   if (req.method === 'DELETE') {
+    const { file_id } = req.body || {};
+
+    if (file_id) {
+      // Remove file from collection
+      const { error } = await supabase
+        .from('file_collection_items')
+        .delete()
+        .eq('collection_id', id)
+        .eq('file_id', file_id);
+
+      if (error) return res.status(400).json({ error: error.message });
+      return res.status(204).end();
+    }
+
+    // Delete the collection itself
     const { error } = await supabase
       .from('file_collections')
       .delete()

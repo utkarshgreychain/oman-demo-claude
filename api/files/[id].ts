@@ -14,6 +14,39 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const fileId = Array.isArray(id) ? id[0] : id;
   const supabase = createAdminClient();
 
+  // Handle /api/files/list — list all files or files in a collection
+  if (fileId === 'list') {
+    if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
+
+    const collectionId = req.query.collection_id as string | undefined;
+
+    if (collectionId) {
+      const { data, error } = await supabase
+        .from('file_collection_items')
+        .select('file_id, uploaded_files(*)')
+        .eq('collection_id', collectionId)
+        .order('added_at', { ascending: false });
+
+      if (error) return res.status(500).json({ error: error.message });
+
+      const files = (data || [])
+        .map((item: any) => item.uploaded_files)
+        .filter(Boolean);
+
+      return res.json(files);
+    }
+
+    const { data, error } = await supabase
+      .from('uploaded_files')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false });
+
+    if (error) return res.status(500).json({ error: error.message });
+    return res.json(data || []);
+  }
+
+  // Regular file operations
   if (req.method === 'GET') {
     const { data, error } = await supabase
       .from('uploaded_files')

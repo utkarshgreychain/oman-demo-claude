@@ -13,6 +13,31 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const supabase = createAdminClient();
 
   if (req.method === 'GET') {
+    // Dashboard stats mode: GET /api/collections?stats=true
+    if (req.query.stats === 'true') {
+      const [conversations, files, providers] = await Promise.all([
+        supabase
+          .from('conversations')
+          .select('id', { count: 'exact', head: true })
+          .eq('user_id', user.id),
+        supabase
+          .from('uploaded_files')
+          .select('id', { count: 'exact', head: true })
+          .eq('user_id', user.id),
+        supabase
+          .from('llm_providers')
+          .select('id', { count: 'exact', head: true })
+          .eq('user_id', user.id)
+          .eq('is_active', true),
+      ]);
+
+      return res.json({
+        conversations: conversations.count || 0,
+        files: files.count || 0,
+        providers: providers.count || 0,
+      });
+    }
+
     const { data, error } = await supabase
       .from('file_collections')
       .select('*, file_collection_items(count)')

@@ -23,7 +23,7 @@ export const configService = {
     return data;
   },
   getProviderModels: async (id: string): Promise<string[]> => {
-    const { data } = await api.get(`/config/llm-providers/${id}/models`);
+    const { data } = await api.get(`/config/llm-providers/${id}`);
     return data.models || [];
   },
 
