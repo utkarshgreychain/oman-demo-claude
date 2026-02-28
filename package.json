@@ -1,0 +1,27 @@
+{
+  "name": "oman-demo-claude",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "npx playwright test",
+    "test:headed": "npx playwright test --headed",
+    "test:ui": "npx playwright test --ui",
+    "test:report": "npx playwright show-report"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/utkarshgreychain/oman-demo-claude.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/utkarshgreychain/oman-demo-claude/issues"
+  },
+  "homepage": "https://github.com/utkarshgreychain/oman-demo-claude#readme",
+  "description": "",
+  "devDependencies": {
+    "@playwright/test": "^1.58.2",
+    "typescript": "^5.9.3"
+  }
+}
