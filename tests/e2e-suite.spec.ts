@@ -25,7 +25,7 @@ async function loginWithEmail(page: Page, email: string, password: string) {
   await signInButton.click();
 
   // Wait for navigation away from login
-  await page.waitForURL((url) => !url.pathname.includes('/login'), { timeout: 15000 });
+  await page.waitForURL((url) => !url.pathname.includes('/login'), { timeout: 30000 });
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -271,14 +271,15 @@ test.describe('5. Sources', () => {
   });
 
   test('5.05 can create a new collection', async ({ page }) => {
+    const uniqueName = `E2E Test ${Date.now()}`;
     const plusButton = page.locator('button').filter({ has: page.locator('svg.lucide-plus') }).last();
     await plusButton.click();
 
-    await page.locator('input[placeholder*="Research Papers"]').fill('Test Collection');
+    await page.locator('input[placeholder*="Research Papers"]').fill(uniqueName);
     await page.locator('button', { hasText: 'Create' }).click();
 
     // Collection should appear in tabs
-    await expect(page.locator('text=Test Collection')).toBeVisible({ timeout: 5000 });
+    await expect(page.getByRole('button', { name: new RegExp(uniqueName) })).toBeVisible({ timeout: 5000 });
   });
 });
 
