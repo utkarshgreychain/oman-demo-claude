@@ -24,7 +24,7 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      window.location.href = '/login';
+      supabase.auth.signOut();
     }
     console.error('API Error:', error.response?.data || error.message);
     return Promise.reject(error);

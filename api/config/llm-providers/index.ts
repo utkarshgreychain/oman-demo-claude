@@ -6,7 +6,7 @@ import { encryptApiKey } from '../../_lib/encryption';
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   let user;
   try {
-    user = await getUserFromRequest(req as unknown as Request);
+    user = await getUserFromRequest(req);
   } catch {
     return res.status(401).json({ error: 'Unauthorized' });
   }

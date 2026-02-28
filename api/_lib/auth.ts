@@ -1,3 +1,4 @@
+import type { VercelRequest } from '@vercel/node';
 import { createAdminClient } from './supabase-admin';
 
 export interface AuthUser {
@@ -5,8 +6,10 @@ export interface AuthUser {
   email: string;
 }
 
-export async function getUserFromRequest(req: Request): Promise<AuthUser> {
-  const authHeader = req.headers.get('Authorization');
+export async function getUserFromRequest(req: VercelRequest): Promise<AuthUser> {
+  const authHeader =
+    (req.headers.authorization as string) ||
+    (req.headers['Authorization'] as string);
   if (!authHeader?.startsWith('Bearer ')) {
     throw new Error('Missing or invalid Authorization header');
   }

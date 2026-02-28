@@ -8,7 +8,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    await getUserFromRequest(req as unknown as Request);
+    await getUserFromRequest(req);
   } catch {
     return res.status(401).json({ error: 'Unauthorized' });
   }
