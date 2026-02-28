@@ -1,8 +1,8 @@
 import { test, expect, type Page } from '@playwright/test';
 
 const BASE_URL = process.env.TEST_BASE_URL || 'https://oman-demo-claude.vercel.app';
-const TEST_EMAIL = process.env.TEST_EMAIL || 'test-e2e@example.com';
-const TEST_PASSWORD = process.env.TEST_PASSWORD || 'TestPassword123!';
+const TEST_EMAIL = process.env.TEST_EMAIL || 'oman.demo.test.e2e@gmail.com';
+const TEST_PASSWORD = process.env.TEST_PASSWORD || 'TestPassword123';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // HELPERS
@@ -35,7 +35,7 @@ async function loginWithEmail(page: Page, email: string, password: string) {
 test.describe('1. Authentication', () => {
   test('1.01 login page loads with gradient background', async ({ page }) => {
     await page.goto('/login');
-    await expect(page.locator('text=Sign In')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Sign In' })).toBeVisible();
   });
 
   test('1.02 login page shows email and password fields', async ({ page }) => {
@@ -93,7 +93,7 @@ test.describe('2. Navigation & Layout', () => {
 
   test('2.01 after login, lands on Dashboard page', async ({ page }) => {
     await expect(page).toHaveURL('/');
-    await expect(page.locator('text=Dashboard')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible();
   });
 
   test('2.02 NavRail is visible with 4 navigation icons', async ({ page }) => {
@@ -164,8 +164,8 @@ test.describe('3. Dashboard', () => {
     expect(count).toBeGreaterThanOrEqual(3);
   });
 
-  test('3.03 dashboard shows chart placeholder', async ({ page }) => {
-    await expect(page.locator('text=Upload Excel or CSV files')).toBeVisible();
+  test('3.03 dashboard shows collection dropdown', async ({ page }) => {
+    await expect(page.locator('text=Select a collection to view insights')).toBeVisible();
   });
 });
 
@@ -183,22 +183,23 @@ test.describe('4. Settings', () => {
   });
 
   test('4.01 settings page shows LLM Providers section', async ({ page }) => {
-    await expect(page.locator('text=LLM Providers')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'LLM Providers' })).toBeVisible();
   });
 
   test('4.02 settings page shows Search Providers section', async ({ page }) => {
-    await expect(page.locator('text=Search Providers')).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Search Providers/i })).toBeVisible();
   });
 
   test('4.03 add LLM provider modal opens', async ({ page }) => {
-    const addButton = page.locator('button', { hasText: /add llm/i });
-    await addButton.click();
+    // First "Add New" button is in the LLM section
+    const llmSection = page.locator('section').filter({ has: page.getByRole('heading', { name: 'LLM Providers' }) });
+    await llmSection.getByRole('button', { name: /add new/i }).click();
     await expect(page.locator('text=Add LLM Provider')).toBeVisible();
   });
 
   test('4.04 add LLM provider modal shows all providers in dropdown', async ({ page }) => {
-    const addButton = page.locator('button', { hasText: /add llm/i });
-    await addButton.click();
+    const llmSection = page.locator('section').filter({ has: page.getByRole('heading', { name: 'LLM Providers' }) });
+    await llmSection.getByRole('button', { name: /add new/i }).click();
 
     // Click the provider dropdown
     const dropdown = page.locator('text=Select a provider').first();
@@ -213,14 +214,14 @@ test.describe('4. Settings', () => {
   });
 
   test('4.05 add search provider modal opens', async ({ page }) => {
-    const addButton = page.locator('button', { hasText: /add search/i });
-    await addButton.click();
+    const searchSection = page.locator('section').filter({ has: page.getByRole('heading', { name: /Search Providers/i }) });
+    await searchSection.getByRole('button', { name: /add new/i }).click();
     await expect(page.locator('text=Add Search Provider')).toBeVisible();
   });
 
   test('4.06 add search provider modal shows all providers', async ({ page }) => {
-    const addButton = page.locator('button', { hasText: /add search/i });
-    await addButton.click();
+    const searchSection = page.locator('section').filter({ has: page.getByRole('heading', { name: /Search Providers/i }) });
+    await searchSection.getByRole('button', { name: /add new/i }).click();
 
     const dropdown = page.locator('text=Select a provider').first();
     await dropdown.click();

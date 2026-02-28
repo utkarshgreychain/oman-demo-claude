@@ -60,19 +60,36 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       parsedContent = `[Failed to parse file: ${e.message}]`;
     }
 
+    // Extract metadata for tabular files
+    let rowCount: number | null = null;
+    let columnNames: string[] | null = null;
+    const TABULAR_EXTS = new Set(['csv', 'tsv', 'xlsx', 'xls']);
+    if (TABULAR_EXTS.has(ext) && parsedContent && !parsedContent.startsWith('[Failed')) {
+      const lines = parsedContent.split('\n').filter(l => l.trim());
+      if (lines.length > 0) {
+        // First line is header
+        columnNames = lines[0].split(',').map(c => c.trim().replace(/^"|"$/g, ''));
+        rowCount = Math.max(0, lines.length - 1);
+      }
+    }
+
     // Save metadata to DB
+    const insertData: Record<string, unknown> = {
+      id: fileId,
+      user_id: user.id,
+      filename,
+      file_type: `.${ext}`,
+      file_size: file.size || fileBuffer.length,
+      storage_path: storagePath,
+      parsed_content: parsedContent,
+    };
+    if (rowCount !== null) insertData.row_count = rowCount;
+    if (columnNames) insertData.column_names = columnNames;
+
     const { data: uploaded, error: dbError } = await supabase
       .from('uploaded_files')
-      .insert({
-        id: fileId,
-        user_id: user.id,
-        filename,
-        file_type: `.${ext}`,
-        file_size: file.size || fileBuffer.length,
-        storage_path: storagePath,
-        parsed_content: parsedContent,
-      })
-      .select('id, filename, file_type, file_size, created_at')
+      .insert(insertData)
+      .select('id, filename, file_type, file_size, storage_path, created_at, row_count, column_names, summary, key_insights')
       .single();
 
     if (dbError) throw new Error(`Database insert failed: ${dbError.message}`);

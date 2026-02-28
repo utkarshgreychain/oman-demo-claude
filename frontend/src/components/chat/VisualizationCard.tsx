@@ -1,6 +1,6 @@
-import { useRef, useCallback } from 'react';
+import { useRef, useCallback, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Download, BarChart3 } from 'lucide-react';
+import { Download, BarChart3, Loader2 } from 'lucide-react';
 import {
   BarChart, Bar, LineChart, Line, AreaChart, Area, PieChart, Pie, Cell,
   ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
@@ -46,38 +46,78 @@ const tooltipStyle = {
 
 export function VisualizationCard({ visualization }: VisualizationCardProps) {
   const chartRef = useRef<HTMLDivElement>(null);
+  const [downloading, setDownloading] = useState(false);
 
   const handleDownload = useCallback(async () => {
-    if (!chartRef.current) return;
+    if (!chartRef.current || downloading) return;
+    setDownloading(true);
+
     try {
-      const html2canvas = (await import('html2canvas')).default;
-      const canvas = await html2canvas(chartRef.current, {
-        backgroundColor: '#0f0a1e',
-        scale: 2,
-      });
-      const url = canvas.toDataURL('image/png');
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${visualization.title || 'chart'}.png`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
+      // Strategy: render SVG to canvas for a clean PNG
+      const svgEl = chartRef.current.querySelector('svg');
+      if (!svgEl) throw new Error('No SVG found');
+
+      const svgData = new XMLSerializer().serializeToString(svgEl);
+      const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+      const url = URL.createObjectURL(svgBlob);
+
+      const img = new window.Image();
+      img.onload = () => {
+        const scale = 2;
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width * scale;
+        canvas.height = img.height * scale;
+        const ctx = canvas.getContext('2d')!;
+
+        // Draw background
+        ctx.fillStyle = '#0f0a1e';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Draw title
+        ctx.fillStyle = '#e2e8f0';
+        ctx.font = `${14 * scale}px Inter, system-ui, sans-serif`;
+        ctx.fillText(visualization.title || 'Chart', 16 * scale, 24 * scale);
+
+        // Draw chart below title
+        ctx.drawImage(img, 0, 32 * scale, canvas.width, canvas.height - 32 * scale);
+
+        canvas.toBlob((blob) => {
+          if (blob) {
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = `${visualization.title || 'chart'}.png`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+          }
+          setDownloading(false);
+        }, 'image/png');
+
+        URL.revokeObjectURL(url);
+      };
+      img.onerror = () => {
+        // Fallback to html2canvas
+        import('html2canvas').then(({ default: html2canvas }) => {
+          html2canvas(chartRef.current!, {
+            backgroundColor: '#0f0a1e',
+            scale: 2,
+            useCORS: true,
+            logging: false,
+          }).then(canvas => {
+            const a = document.createElement('a');
+            a.href = canvas.toDataURL('image/png');
+            a.download = `${visualization.title || 'chart'}.png`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+          }).finally(() => setDownloading(false));
+        }).catch(() => setDownloading(false));
+      };
+      img.src = url;
     } catch {
-      // Fallback to SVG download
-      const svg = chartRef.current.querySelector('svg');
-      if (!svg) return;
-      const svgData = new XMLSerializer().serializeToString(svg);
-      const blob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${visualization.title || 'chart'}.svg`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      setDownloading(false);
     }
-  }, [visualization.title]);
+  }, [visualization.title, downloading]);
 
   if (!visualization.data) {
     return (
@@ -252,13 +292,14 @@ export function VisualizationCard({ visualization }: VisualizationCardProps) {
         <button
           type="button"
           onClick={handleDownload}
-          className="p-1.5 rounded-lg text-text-secondary hover:text-text-primary hover:bg-surface-light transition-colors cursor-pointer"
-          aria-label="Download chart"
+          disabled={downloading}
+          className="p-1.5 rounded-lg text-text-secondary hover:text-text-primary hover:bg-surface-light transition-colors cursor-pointer disabled:opacity-50"
+          aria-label="Download chart as PNG"
         >
-          <Download size={16} />
+          {downloading ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
         </button>
       </div>
-      <div ref={chartRef} className="p-4 bg-background/50">
+      <div ref={chartRef} className="p-4" style={{ backgroundColor: '#0f0a1e' }}>
         {renderChart()}
       </div>
     </motion.div>

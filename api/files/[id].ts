@@ -48,9 +48,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   // Regular file operations
   if (req.method === 'GET') {
+    // If ?include=data, also return parsed_content for visualization
+    const includeData = req.query.include === 'data';
+    const selectCols = includeData
+      ? 'id, filename, file_type, file_size, storage_path, created_at, row_count, column_names, summary, key_insights, parsed_content'
+      : 'id, filename, file_type, file_size, storage_path, created_at, row_count, column_names, summary, key_insights';
+
     const { data, error } = await supabase
       .from('uploaded_files')
-      .select('id, filename, file_type, file_size, created_at')
+      .select(selectCols)
       .eq('id', fileId)
       .eq('user_id', user.id)
       .single();

@@ -1,4 +1,7 @@
+import type { UploadedFile } from '../types/file';
 import api from './api';
+
+export type { UploadedFile };
 
 export interface Collection {
   id: string;
@@ -14,21 +17,6 @@ export interface DashboardStats {
   conversations: number;
   files: number;
   providers: number;
-}
-
-export interface UploadedFile {
-  id: string;
-  user_id: string;
-  filename: string;
-  original_name: string;
-  mime_type: string;
-  size_bytes: number;
-  storage_path: string;
-  summary: string | null;
-  key_insights: string[] | null;
-  row_count: number | null;
-  column_names: string[] | null;
-  created_at: string;
 }
 
 export const collectionService = {
@@ -64,6 +52,11 @@ export const collectionService = {
   getFiles: async (collectionId?: string): Promise<UploadedFile[]> => {
     const params = collectionId ? `?collection_id=${collectionId}` : '';
     const { data } = await api.get(`/files/list${params}`);
+    return data;
+  },
+
+  getFileWithData: async (id: string): Promise<UploadedFile> => {
+    const { data } = await api.get(`/files/${id}?include=data`);
     return data;
   },
 
