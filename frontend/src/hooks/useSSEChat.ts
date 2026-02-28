@@ -4,6 +4,7 @@ import { useConfigStore } from '../stores/configStore';
 import { useUIStore } from '../stores/uiStore';
 import type { ChatPayload, Message } from '../types/chat';
 import { parseSSEEvents } from '../utils/sse';
+import { supabase } from '../lib/supabase';
 
 export function useSSEChat() {
   const abortRef = useRef<AbortController | null>(null);
@@ -53,9 +54,13 @@ export function useSSEChat() {
     abortRef.current = controller;
 
     try {
+      const { data: { session } } = await supabase.auth.getSession();
       const response = await fetch('/api/chat/stream', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token}`,
+        },
         body: JSON.stringify(payload),
         signal: controller.signal,
       });

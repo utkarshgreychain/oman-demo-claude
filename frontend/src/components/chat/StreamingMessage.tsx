@@ -13,7 +13,7 @@ interface StreamingMessageProps {
   progressSteps: ProgressStep[];
 }
 
-export function StreamingMessage({ content, status, progressSteps }: StreamingMessageProps) {
+export function StreamingMessage({ content, status: _status, progressSteps }: StreamingMessageProps) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 16 }}

@@ -1,12 +1,21 @@
 import { useNavigate } from 'react-router-dom';
-import { Settings, MessageSquare, Sun, Moon } from 'lucide-react';
+import { Settings, MessageSquare, Sun, Moon, LogOut } from 'lucide-react';
 import { useConfigStore } from '../../stores/configStore';
 import { useUIStore } from '../../stores/uiStore';
+import { useAuth } from '../../contexts/AuthContext';
 
 export function Header() {
   const navigate = useNavigate();
   const { selectedProvider, selectedModel } = useConfigStore();
   const { theme, toggleTheme } = useUIStore();
+  const { user, signOut } = useAuth();
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/login');
+  };
+
+  const userInitial = user?.user_metadata?.full_name?.[0] || user?.email?.[0]?.toUpperCase() || 'U';
 
   return (
     <header className="flex items-center justify-between h-14 px-4 border-b border-border bg-surface shrink-0">
@@ -48,6 +57,20 @@ export function Header() {
         >
           <Settings size={18} />
         </button>
+
+        {/* User & Sign out */}
+        <div className="flex items-center gap-2 ml-2 pl-2 border-l border-border">
+          <span className="w-7 h-7 rounded-full bg-primary flex items-center justify-center text-white text-xs font-medium">
+            {userInitial}
+          </span>
+          <button
+            onClick={handleSignOut}
+            className="p-2 rounded-lg text-text-secondary hover:text-error hover:bg-surface-light transition-colors cursor-pointer"
+            aria-label="Sign out"
+          >
+            <LogOut size={16} />
+          </button>
+        </div>
       </div>
     </header>
   );

@@ -1,0 +1,64 @@
+import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { createAdminClient } from '../../_lib/supabase-admin';
+import { getUserFromRequest } from '../../_lib/auth';
+import { encryptApiKey } from '../../_lib/encryption';
+
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  let user;
+  try {
+    user = await getUserFromRequest(req as unknown as Request);
+  } catch {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+
+  const supabase = createAdminClient();
+
+  if (req.method === 'GET') {
+    const { data, error } = await supabase
+      .from('llm_providers')
+      .select('id, name, display_name, base_url, models, is_active, is_default, connection_status, created_at, updated_at')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: true });
+
+    if (error) return res.status(500).json({ error: error.message });
+    return res.json(data);
+  }
+
+  if (req.method === 'POST') {
+    const { name, display_name, api_key, base_url, models, is_active, is_default } = req.body;
+
+    if (!name || !api_key) {
+      return res.status(400).json({ error: 'name and api_key are required' });
+    }
+
+    const apiKeyEncrypted = await encryptApiKey(api_key);
+
+    // If setting as default, clear other defaults first
+    if (is_default) {
+      await supabase
+        .from('llm_providers')
+        .update({ is_default: false })
+        .eq('user_id', user.id);
+    }
+
+    const { data, error } = await supabase
+      .from('llm_providers')
+      .insert({
+        user_id: user.id,
+        name,
+        display_name: display_name || name,
+        api_key_encrypted: apiKeyEncrypted,
+        base_url: base_url || null,
+        models: models || [],
+        is_active: is_active ?? true,
+        is_default: is_default ?? false,
+      })
+      .select('id, name, display_name, base_url, models, is_active, is_default, connection_status, created_at, updated_at')
+      .single();
+
+    if (error) return res.status(400).json({ error: error.message });
+    return res.status(201).json(data);
+  }
+
+  return res.status(405).json({ error: 'Method not allowed' });
+}
