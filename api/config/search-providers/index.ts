@@ -33,7 +33,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const apiKeyEncrypted = await encryptApiKey(api_key);
 
-    if (is_default) {
+    // Auto-default if this is the first provider for the user
+    const { count } = await supabase
+      .from('search_providers')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', user.id);
+    const shouldDefault = is_default || count === 0;
+
+    if (shouldDefault) {
       await supabase
         .from('search_providers')
         .update({ is_default: false })
@@ -48,7 +55,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         display_name: display_name || name,
         api_key_encrypted: apiKeyEncrypted,
         is_active: is_active ?? true,
-        is_default: is_default ?? false,
+        is_default: shouldDefault,
+        connection_status: 'connected',
       })
       .select('id, name, display_name, is_active, is_default, connection_status, created_at')
       .single();

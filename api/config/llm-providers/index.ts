@@ -33,8 +33,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const apiKeyEncrypted = await encryptApiKey(api_key);
 
+    // Auto-default if this is the first provider for the user
+    const { count } = await supabase
+      .from('llm_providers')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', user.id);
+    const shouldDefault = is_default || count === 0;
+
     // If setting as default, clear other defaults first
-    if (is_default) {
+    if (shouldDefault) {
       await supabase
         .from('llm_providers')
         .update({ is_default: false })
@@ -51,7 +58,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         base_url: base_url || null,
         models: models || [],
         is_active: is_active ?? true,
-        is_default: is_default ?? false,
+        is_default: shouldDefault,
+        connection_status: 'connected',
       })
       .select('id, name, display_name, base_url, models, is_active, is_default, connection_status, created_at, updated_at')
       .single();
